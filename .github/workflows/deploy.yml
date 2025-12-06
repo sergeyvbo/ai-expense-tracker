@@ -1,0 +1,58 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Copy files via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          source: "dist/,package.json,package-lock.json"
+          target: ${{ secrets.TARGET_DIR }}
+
+      - name: Execute remote commands
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GOOGLE_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          envs: GOOGLE_JSON,ENV_FILE
+          script: |
+            cd ${{ secrets.TARGET_DIR }}
+            
+            # Write secrets to files
+            echo "$GOOGLE_JSON" > service-account.json
+            echo "$ENV_FILE" > .env
+
+            # Install production dependencies only
+            npm ci --production
+
+            pm2 restart expense-tracker || pm2 start dist/index.js --name expense-tracker
+            pm2 save
