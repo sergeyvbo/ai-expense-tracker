@@ -31,9 +31,7 @@ async function getSheetName(): Promise<string> {
 
 export async function appendExpense(record: ExpenseRecord) {
   const sheetName = await getSheetName();
-  const itemsString = record.items
-    .map((i) => `${i.name} (${i.quantity}x${i.price})`)
-    .join(', ');
+  const itemsString = JSON.stringify(record.items);
 
   const values = [
     [

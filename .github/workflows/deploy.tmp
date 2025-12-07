@@ -52,7 +52,7 @@ jobs:
             echo "$ENV_FILE" > .env
 
             # Install production dependencies only
-            npm ci --production
+            npm install --production
 
             pm2 restart expense-tracker || pm2 start dist/index.js --name expense-tracker
             pm2 save
