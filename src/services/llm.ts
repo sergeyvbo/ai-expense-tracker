@@ -12,6 +12,7 @@ export const ExpenseSchema = z.object({
       price: z.number(),
     })
   ),
+  category: z.string().describe('Inferred category of the whole receipt (e.g., Groceries, Tech, Clothing, Household, etc.)'),
   tax: z.number().optional().default(0),
   total: z.number(),
 });
@@ -26,7 +27,7 @@ export async function parseReceipt(imageUrl: string): Promise<ParsedExpense> {
       {
         role: 'user',
         content: [
-          { type: 'text', text: 'Parse this receipt. Extract merchant, date, items, tax, and total.' },
+          { type: 'text', text: 'Parse this receipt. Extract merchant, date, items, tax, total, and the overall category.' },
           { type: 'image', image: imageUrl },
         ],
       },

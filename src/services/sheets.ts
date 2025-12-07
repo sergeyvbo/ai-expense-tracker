@@ -18,6 +18,7 @@ export interface ExpenseRecord {
   date: string;
   merchant: string;
   items: ExpenseItem[];
+  category: string;
   tax: number;
   total: number;
 }
@@ -38,6 +39,7 @@ export async function appendExpense(record: ExpenseRecord) {
       record.date,
       record.merchant,
       itemsString,
+      record.category,
       record.tax,
       record.total,
     ],
@@ -45,7 +47,7 @@ export async function appendExpense(record: ExpenseRecord) {
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: config.googleSheetId,
-    range: `${sheetName}!A:E`,
+    range: `${sheetName}!A:F`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values,
@@ -57,7 +59,7 @@ export async function getExpenses() {
   const sheetName = await getSheetName();
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: config.googleSheetId,
-    range: `${sheetName}!A:E`,
+    range: `${sheetName}!A:F`,
   });
   return response.data.values || [];
 }
