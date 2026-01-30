@@ -23,8 +23,7 @@ export const ExpenseSchema = z.object({
     z.object({
       name: z.string(),
       quantity: z.number().default(1),
-      unitPrice: z.number(),
-      totalPrice: z.number(),
+      price: z.number(),
     }),
   ),
   category: CategoryEnum.describe(

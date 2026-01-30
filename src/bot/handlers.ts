@@ -1,12 +1,17 @@
-import { Context, SessionFlavor } from 'grammy';
+import { Context, SessionFlavor, InlineKeyboard } from 'grammy';
 import { SessionData } from './session';
 import { parseReceipt, correctExpenseData, answerQuery, parseExpenseText } from '../services/llm';
 import { appendExpense, getExpenses } from '../services/sheets';
+import { formatExpense } from '../services/formatter';
 
 export type MyContext = Context & SessionFlavor<SessionData>;
 
+const confirmKeyboard = new InlineKeyboard()
+  .text("✅ OK", "expense_ok")
+  .text("✏️ Edit", "expense_edit");
+
 export async function handleStart(ctx: MyContext) {
-  await ctx.reply('Welcome! Send me a receipt photo to track your expense, or ask me questions about your spending.');
+  await ctx.reply('👋 Welcome! Send me a receipt photo, or expense description, or your query.');
 }
 
 export async function handlePhoto(ctx: MyContext) {
@@ -16,19 +21,21 @@ export async function handlePhoto(ctx: MyContext) {
   const file = await ctx.api.getFile(photo.file_id);
   const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
 
-  await ctx.reply('Processing receipt...');
+  await ctx.reply("⏳ Processing receipt...");
   
   try {
     const data = await parseReceipt(fileUrl);
     ctx.session.currentExpense = data;
     ctx.session.waitingForCorrection = true;
 
-    await ctx.reply(
-      `Parsed Data:\nMerchant: ${data.merchant}\nDate: ${data.date}\nTotal: ${data.total}\nItems: ${data.items.length}\n\nIs this correct? Reply with corrections or "yes" to save.`
-    );
+    await ctx.reply(formatExpense(ctx.session.currentExpense), {
+      parse_mode: "MarkdownV2",
+      reply_markup: confirmKeyboard,
+    });
+
   } catch (error) {
     console.error(error);
-    await ctx.reply('Failed to parse receipt.');
+    await ctx.reply('☠️ Failed to parse receipt.');
   }
 }
 
@@ -37,33 +44,49 @@ export async function handleText(ctx: MyContext) {
   if (!text) return;
 
   if (ctx.session.waitingForCorrection && ctx.session.currentExpense) {
-    if (text.toLowerCase() === 'yes') {
-      await appendExpense(ctx.session.currentExpense);
-      ctx.session.waitingForCorrection = false;
-      ctx.session.currentExpense = undefined;
-      await ctx.reply('Expense saved!');
-    } else {
-      // Correction
-      const newData = await correctExpenseData(ctx.session.currentExpense, text);
-      ctx.session.currentExpense = newData;
-      await ctx.reply(
-        `Updated Data:\nMerchant: ${newData.merchant}\nDate: ${newData.date}\nTotal: ${newData.total}\n\nIs this correct?`
-      );
-    }
-  } else {
-    // Check if it's an expense entry or Q&A
-    const result = await parseExpenseText(text);
-    if (result.type === 'expense') {
-      ctx.session.currentExpense = result.data;
-      ctx.session.waitingForCorrection = true;
-      await ctx.reply(
-        `Parsed Expense:\nMerchant: ${result.data.merchant}\nDate: ${result.data.date}\nTotal: ${result.data.total}\n\nIs this correct? Reply with corrections or "yes" to save.`
-      );
-    } else {
-      // Q&A
-      const expenses = await getExpenses();
-      const answer = await answerQuery(text, expenses);
-      await ctx.reply(answer);
-    }
+    const newData = await correctExpenseData(ctx.session.currentExpense, text);
+    ctx.session.currentExpense = newData;
+    await ctx.reply(formatExpense(ctx.session.currentExpense), {
+      parse_mode: "MarkdownV2",
+      reply_markup: confirmKeyboard,
+    });
+    return;
   }
+
+  // Check if it's an expense entry or Q&A
+  const result = await parseExpenseText(text);
+  if (result.type === 'expense') {
+
+    ctx.session.currentExpense = result.data;
+    ctx.session.waitingForCorrection = true;
+    await ctx.reply(formatExpense(ctx.session.currentExpense),
+    {
+      parse_mode: 'MarkdownV2',
+      reply_markup: confirmKeyboard
+    });
+  } else {
+    // Q&A
+    const expenses = await getExpenses();
+    const answer = await answerQuery(text, expenses);
+    await ctx.reply(answer);
+  }
+}
+
+export async function handleSave(ctx: MyContext) {
+  if (!ctx.session.currentExpense) return;
+  await appendExpense(ctx.session.currentExpense);
+  ctx.session.currentExpense = undefined;
+  ctx.session.waitingForCorrection = false;
+
+  await ctx.editMessageReplyMarkup();
+  await ctx.reply("💾 Expense saved!");
+  await ctx.answerCallbackQuery();
+
+}
+
+export async function handleEdit(ctx: MyContext) {
+  ctx.session.waitingForCorrection = true;
+
+  await ctx.reply('✏️ Send corrections (e.g. "date is 2026-01-31")');
+  await ctx.answerCallbackQuery();
 }

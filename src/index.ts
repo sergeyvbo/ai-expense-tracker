@@ -1,7 +1,7 @@
 import { Bot, session } from 'grammy';
 import { config } from './config';
 import { initialSession } from './bot/session';
-import { handleStart, handlePhoto, handleText, MyContext } from './bot/handlers';
+import { handleStart, handlePhoto, handleText, MyContext, handleSave, handleEdit } from './bot/handlers';
 
 const bot = new Bot<MyContext>(config.telegramBotToken);
 
@@ -13,7 +13,7 @@ bot.on('message:text', handleText);
 
 bot.catch((err) => {
   const ctx = err.ctx;
-  console.error(`Error while handling update ${ctx.update.update_id}:`);
+  console.error(`☠️ Error while handling update ${ctx.update.update_id}:`);
   const e = err.error;
   if (e instanceof Error) {
     console.error(e.message);
@@ -23,5 +23,8 @@ bot.catch((err) => {
   }
 });
 
+bot.callbackQuery('expense_ok', handleSave);
+bot.callbackQuery('expense_edit', handleEdit);
+
 bot.start();
-console.log('Bot started...');
+console.log("🤖 Bot started...");
