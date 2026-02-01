@@ -82,16 +82,24 @@ export async function handleSave(ctx: MyContext) {
 
   try {
     // Update or create pinned dashboard
-    const messageId = await updatePinnedDashboard(
+    const result = await updatePinnedDashboard(
       ctx.api,
       ctx.chat!.id,
       ctx.session.pinnedMessageId,
     );
 
-    // Store the message ID for future updates
-    ctx.session.pinnedMessageId = messageId;
+    // Store the message ID for future updates in this session
+    ctx.session.pinnedMessageId = result.messageId;
 
-    // await ctx.reply("✅ Dashboard updated!");
+    if (result.isNew) {
+      await ctx.reply(
+        `🆕 New dashboard message created and pinned!\n\n` +
+        `To keep it persistent, please add this to your \`.env\` file and restart the bot:\n` +
+        `\`DASHBOARD_MESSAGE_ID=${result.messageId}\``
+      );
+    }
+
+    await ctx.reply("✅ Dashboard updated!");
   } catch (error) {
     console.error("Dashboard update failed:", error);
     await ctx.reply("⚠️ Dashboard update failed.");

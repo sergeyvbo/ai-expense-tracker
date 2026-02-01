@@ -9,8 +9,8 @@ const EnvSchema = z.object({
   OPENAI_API_KEY: z.string().min(1),
   GOOGLE_SHEET_ID: z.string().min(1),
   GOOGLE_SERVICE_ACCOUNT_PATH: z.string().min(1),
-  DASHBOARD_ENDPOINT: z.string().url(),
-  DASHBOARD_MESSAGE_ID: z.string().min(1),
+  DASHBOARD_ENDPOINT: z.url(),
+  DASHBOARD_MESSAGE_ID: z.string().optional().transform(v => v ? parseInt(v, 10) : undefined),
 });
 
 const envData = EnvSchema.parse(process.env);
