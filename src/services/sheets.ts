@@ -1,9 +1,12 @@
 import { google } from 'googleapis';
 import { config } from '../config';
 
-const auth = new google.auth.GoogleAuth({
+export const auth = new google.auth.GoogleAuth({
   keyFile: config.googleServiceAccountPath,
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  scopes: [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive.readonly'
+  ],
 });
 
 const sheets = google.sheets({ version: 'v4', auth });

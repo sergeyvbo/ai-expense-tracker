@@ -1,4 +1,4 @@
-import { Context, SessionFlavor } from 'grammy';
+import { Context, SessionFlavor, InputFile } from 'grammy';
 import { SessionData } from './session';
 import { parseReceipt, correctExpenseData, answerQuery, parseExpenseText } from '../services/llm';
 import { appendExpense, getExpenses } from '../services/sheets';
@@ -71,6 +71,12 @@ export async function handleText(ctx: MyContext) {
 }
 
 export async function handleSave(ctx: MyContext) {
+  try {
+    await ctx.answerCallbackQuery();
+  } catch (e) {
+    console.error("Failed to answer callback query:", e);
+  }
+
   if (!ctx.session.currentExpense) return;
   
   await appendExpense(ctx.session.currentExpense);
@@ -78,8 +84,7 @@ export async function handleSave(ctx: MyContext) {
   ctx.session.waitingForCorrection = false;
 
   await ctx.editMessageReplyMarkup();
-  await ctx.reply("💾 Expense saved!");
-
+  
   try {
     // Update or create pinned dashboard
     const result = await updatePinnedDashboard(
@@ -91,6 +96,18 @@ export async function handleSave(ctx: MyContext) {
     // Store the message ID for future updates in this session
     ctx.session.pinnedMessageId = result.messageId;
 
+    const pngFile = new InputFile(result.pngBytes, "dashboard.png");
+    try {
+      await ctx.replyWithPhoto(pngFile, {
+        caption: "💾 Expense saved!"
+      });
+    } catch (photoError: any) {
+      console.error("Failed to send confirmation photo, falling back to document:", photoError.message);
+      await ctx.replyWithDocument(pngFile, {
+        caption: "💾 Expense saved! (Dashboard attached below)"
+      });
+    }
+
     if (result.isNew) {
       await ctx.reply(
         `🆕 New dashboard message created and pinned!\n\n` +
@@ -99,13 +116,10 @@ export async function handleSave(ctx: MyContext) {
       );
     }
 
-    await ctx.reply("✅ Dashboard updated!");
   } catch (error) {
     console.error("Dashboard update failed:", error);
-    await ctx.reply("⚠️ Dashboard update failed.");
+    await ctx.reply("💾 Expense saved, but dashboard update failed. ⚠️");
   }
-
-  await ctx.answerCallbackQuery();
 
 }
 

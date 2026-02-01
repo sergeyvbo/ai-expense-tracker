@@ -11,6 +11,7 @@ const EnvSchema = z.object({
   GOOGLE_SERVICE_ACCOUNT_PATH: z.string().min(1),
   DASHBOARD_ENDPOINT: z.url(),
   DASHBOARD_MESSAGE_ID: z.string().optional().transform(v => v ? parseInt(v, 10) : undefined),
+  CONVERT_API_TOKEN: z.string().min(1),
 });
 
 const envData = EnvSchema.parse(process.env);
@@ -25,4 +26,5 @@ export const config = {
   ),
   dashboardEndpoint: envData.DASHBOARD_ENDPOINT,
   dashboardMessageId: envData.DASHBOARD_MESSAGE_ID,
+  convertApiToken: envData.CONVERT_API_TOKEN,
 };
