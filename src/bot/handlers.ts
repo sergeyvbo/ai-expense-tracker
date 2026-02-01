@@ -1,14 +1,12 @@
-import { Context, SessionFlavor, InlineKeyboard } from 'grammy';
+import { Context, SessionFlavor } from 'grammy';
 import { SessionData } from './session';
 import { parseReceipt, correctExpenseData, answerQuery, parseExpenseText } from '../services/llm';
 import { appendExpense, getExpenses } from '../services/sheets';
 import { formatExpense } from '../services/formatter';
+import { confirmKeyboard } from './keyboard';
+import { updatePinnedDashboard } from '../services/dashboard';
 
 export type MyContext = Context & SessionFlavor<SessionData>;
-
-const confirmKeyboard = new InlineKeyboard()
-  .text("✅ OK", "expense_ok")
-  .text("✏️ Edit", "expense_edit");
 
 export async function handleStart(ctx: MyContext) {
   await ctx.reply('👋 Welcome! Send me a receipt photo, or expense description, or your query.');
@@ -74,12 +72,31 @@ export async function handleText(ctx: MyContext) {
 
 export async function handleSave(ctx: MyContext) {
   if (!ctx.session.currentExpense) return;
+  
   await appendExpense(ctx.session.currentExpense);
   ctx.session.currentExpense = undefined;
   ctx.session.waitingForCorrection = false;
 
   await ctx.editMessageReplyMarkup();
   await ctx.reply("💾 Expense saved!");
+
+  try {
+    // Update or create pinned dashboard
+    const messageId = await updatePinnedDashboard(
+      ctx.api,
+      ctx.chat!.id,
+      ctx.session.pinnedMessageId,
+    );
+
+    // Store the message ID for future updates
+    ctx.session.pinnedMessageId = messageId;
+
+    // await ctx.reply("✅ Dashboard updated!");
+  } catch (error) {
+    console.error("Dashboard update failed:", error);
+    await ctx.reply("⚠️ Dashboard update failed.");
+  }
+
   await ctx.answerCallbackQuery();
 
 }

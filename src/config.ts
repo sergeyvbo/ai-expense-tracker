@@ -1,15 +1,28 @@
-import dotenv from 'dotenv';
-import path from 'path';
+import dotenv from "dotenv";
+import path from "path";
+import { z } from "zod";
 
 dotenv.config();
 
-export const config = {
-  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN!,
-  openaiApiKey: process.env.OPENAI_API_KEY!,
-  googleSheetId: process.env.GOOGLE_SHEET_ID!,
-  googleServiceAccountPath: path.resolve(__dirname, process.env.GOOGLE_SERVICE_ACCOUNT_PATH!),
-};
+const EnvSchema = z.object({
+  TELEGRAM_BOT_TOKEN: z.string().min(1),
+  OPENAI_API_KEY: z.string().min(1),
+  GOOGLE_SHEET_ID: z.string().min(1),
+  GOOGLE_SERVICE_ACCOUNT_PATH: z.string().min(1),
+  DASHBOARD_ENDPOINT: z.string().url(),
+  DASHBOARD_MESSAGE_ID: z.string().min(1),
+});
 
-if (!config.telegramBotToken) throw new Error('TELEGRAM_BOT_TOKEN is missing');
-if (!config.openaiApiKey) throw new Error('OPENAI_API_KEY is missing');
-if (!config.googleSheetId) throw new Error('GOOGLE_SHEET_ID is missing');
+const envData = EnvSchema.parse(process.env);
+
+export const config = {
+  telegramBotToken: envData.TELEGRAM_BOT_TOKEN,
+  openaiApiKey: envData.OPENAI_API_KEY,
+  googleSheetId: envData.GOOGLE_SHEET_ID,
+  googleServiceAccountPath: path.resolve(
+    __dirname,
+    envData.GOOGLE_SERVICE_ACCOUNT_PATH,
+  ),
+  dashboardEndpoint: envData.DASHBOARD_ENDPOINT,
+  dashboardMessageId: envData.DASHBOARD_MESSAGE_ID,
+};

@@ -53,6 +53,17 @@ export async function appendExpense(record: ExpenseRecord) {
       values,
     },
   });
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: config.googleSheetId,
+    range: "Dashboard!H35",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[today]],
+    },
+  });
 }
 
 export async function getExpenses() {

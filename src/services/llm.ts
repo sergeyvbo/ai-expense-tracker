@@ -9,7 +9,7 @@ export const CategoryEnum = z.enum([
   "Car",
   "Gas",
   "Groceries",
-  "Food & Dining",
+  "Dining",
   "Clothing & Gifts",
   "Insurance",
   "Drugstore",
@@ -56,7 +56,7 @@ export async function parseReceipt(imageUrl: string): Promise<ParsedExpense> {
           - Gas is only for fuel stations
           - Drugstore is for CVS/Walgreens-type stores
           - Groceries is for food shopping
-          - Food & Dining is for restaurants and cafes
+          - Dining is for restaurants and cafes
           `,
       },
       {
