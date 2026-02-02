@@ -13,7 +13,7 @@ export async function handleStart(ctx: MyContext) {
 }
 
 export async function handlePhoto(ctx: MyContext) {
-  const photo = ctx.message?.photo?.pop(); // Get highest resolution
+  const photo = ctx.message?.photo?.pop();
   if (!photo) return;
 
   const file = await ctx.api.getFile(photo.file_id);
@@ -85,6 +85,8 @@ export async function handleSave(ctx: MyContext) {
 
   await ctx.editMessageReplyMarkup();
   
+  await ctx.reply("💾 Expense saved!");
+
   try {
     // Update or create pinned dashboard
     const result = await updatePinnedDashboard(
@@ -97,16 +99,17 @@ export async function handleSave(ctx: MyContext) {
     ctx.session.pinnedMessageId = result.messageId;
 
     const pngFile = new InputFile(result.pngBytes, "dashboard.png");
-    try {
-      await ctx.replyWithPhoto(pngFile, {
-        caption: "💾 Expense saved!"
-      });
-    } catch (photoError: any) {
-      console.error("Failed to send confirmation photo, falling back to document:", photoError.message);
-      await ctx.replyWithDocument(pngFile, {
-        caption: "💾 Expense saved! (Dashboard attached below)"
-      });
-    }
+    // try {
+    //   await ctx.replyWithPhoto(pngFile, {
+    //     caption: "💾 Expense saved!"
+    //   });
+    // } catch (photoError: any) {
+    //   console.error("Failed to send confirmation photo, falling back to document:", photoError.message);
+    //   await ctx.replyWithDocument(pngFile, {
+    //     caption: "💾 Expense saved! (Dashboard attached below)"
+    //   });
+    // }
+    
 
     if (result.isNew) {
       await ctx.reply(

@@ -49,7 +49,7 @@ async function getDashboardPngByFileId(fileId: string): Promise<Uint8Array> {
 
 async function getDashboardPngBytes(): Promise<Uint8Array> {
   console.log("⏳ Syncing with Sheets...");
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  //await new Promise((resolve) => setTimeout(resolve, 10000));
   
   const pngUrl = await getDashboardPngUrl();
   const fileId = new URL(pngUrl).searchParams.get("id");

@@ -16,6 +16,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.77",
     "ai": "^5.0.107",
+    "axios": "^1.13.4",
     "dotenv": "^17.2.3",
     "googleapis": "^167.0.0",
     "grammy": "^1.38.4",
